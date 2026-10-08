@@ -9,9 +9,10 @@ services:
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
       MONGODB_DB: ${MONGODB_DB:-focus-list}
       APP_USER: ${APP_USER:-me}
-      APP_PASSWORD: ${APP_PASSWORD:?Set APP_PASSWORD in .env}
+      APP_PASSWORD: ${APP_PASSWORD:-}
     ports:
-      - "${APP_PORT:-3001}:3001"
+      # Default: only this server can connect (for example nginx). Not open to the internet.
+      - "${APP_PORT:-127.0.0.1:3001}:3001"
 
   mongo:
     image: mongo:7

@@ -75,7 +75,7 @@ The app starts empty. Create a project, then add tasks.
 
 ## Deploy on a home server with Docker
 
-Two containers: `app` (React app + API) and `mongo` (database). Optional third: `caddy` (HTTPS).
+Two containers: `app` (React app + API) and `mongo` (database). Put **nginx** in front (login + HTTPS), or use the optional `caddy` container.
 
 ### 1. Prepare the server
 
@@ -90,20 +90,48 @@ cp .env.docker.example .env
 Edit `.env`:
 - `MONGODB_URI`: MongoDB server URL. Default `mongodb://mongo:27017` is the MongoDB container. Change it only to use another MongoDB server.
 - `MONGODB_DB`: database name (default `focus-list`).
-- `APP_PASSWORD`: a long password. **Required.** The app does not start without it.
-- `APP_USER`: login name (default `me`).
-- `APP_PORT`: port for plain HTTP (default `3001`).
-- `DOMAIN`: only for HTTPS (step 4).
+- `APP_PASSWORD` / `APP_USER`: the app's own login. Leave empty when nginx already has a login.
+- `APP_PORT`: where the app listens. Default `127.0.0.1:3001` = only nginx on the same server can reach it.
+- `DOMAIN`: only for the Caddy option.
 
-### 3. Start with HTTP
+### 3. Start
 
 ```bash
 docker compose up -d --build
 ```
 
-Open `http://<server-ip>:3001`. The browser asks for the user name and password.
+Check: `curl http://127.0.0.1:3001/api/health` on the server prints `{"ok":true}`.
 
-### 4. Start with HTTPS (recommended on the internet)
+### 4. nginx in front (login + HTTPS)
+
+Add a `location` to your nginx site (the server block that already has your login and certificate):
+
+```nginx
+location / {
+    # your existing login, for example:
+    # auth_basic "Focus list";
+    # auth_basic_user_file /etc/nginx/.htpasswd;
+
+    proxy_pass http://127.0.0.1:3001;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+To serve the app under a path (for example `/tasks/`) instead of `/`, the app needs a build change. Ask before you do that.
+
+Then reload nginx:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Do not forward port 3001 in the router. Only nginx ports (80/443) should be open.
+
+### 5. Option without nginx: Caddy (HTTPS)
 
 Without HTTPS, the password travels as plain text. With a domain:
 
@@ -143,6 +171,7 @@ docker compose exec -T mongo mongorestore --archive < focus-list.archive
 
 ## Security notes
 
-- Always set `APP_PASSWORD` when the app is reachable from the internet.
-- Use HTTPS (Caddy) on the internet.
+- The app must have a login when it is reachable from the internet: nginx login, or `APP_PASSWORD`.
+- Use HTTPS (nginx or Caddy) on the internet.
+- Keep `APP_PORT=127.0.0.1:3001`, so nobody can skip nginx and its login.
 - MongoDB is not exposed outside Docker. Keep it that way.
