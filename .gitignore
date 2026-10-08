@@ -1,0 +1,10 @@
+node_modules
+dist
+.env.local
+coverage
+.env
+backups
+_resources
+.claude
+*.tsbuildinfo
+.DS_Store

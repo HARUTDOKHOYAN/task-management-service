@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus list</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav" aria-label="Main">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg></span>
+    Focus list
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="#/" data-route="main">Main page</a>
+    <a class="nav-link" href="#/projects" data-route="projects">Projects</a>
+  </div>
+  <button class="btn btn--primary" type="button" data-action="new-task">Create task</button>
+</nav>
+
+<div id="app" aria-live="polite"></div>
+
+<button class="btn btn--primary fab-create" type="button" data-action="new-task">Create task</button>
+
+<!-- Create task -->
+<dialog class="modal" id="taskDialog" aria-labelledby="taskDialogTitle">
+  <form id="taskForm" method="dialog" novalidate>
+    <div class="modal-head">
+      <h2 id="taskDialogTitle">Create task</h2>
+      <button class="btn btn--subtle btn--icon" type="button" data-close aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="muted" style="margin:0">Fields marked with <span class="req">*</span> are required.</p>
+      <div class="field">
+        <label for="tName">Task name <span class="req">*</span></label>
+        <input class="input" id="tName" name="name" type="text" autocomplete="off" placeholder="For example: Send homepage draft to client" aria-describedby="tNameErr">
+        <span class="field-error" id="tNameErr" hidden>Write a task name.</span>
+      </div>
+      <div class="field">
+        <label for="tProject">Project <span class="req">*</span></label>
+        <select class="input" id="tProject" name="project"></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="tDate">Deadline date</label>
+          <input class="input" id="tDate" name="date" type="date">
+        </div>
+        <div class="field">
+          <label for="tTime">Time</label>
+          <input class="input" id="tTime" name="time" type="time">
+        </div>
+      </div>
+      <p class="field-help" style="margin:-12px 0 0">No date? The task uses the project deadline. No time? It is due at the end of the day.</p>
+      <div class="preview-priority" id="tPreview" role="status"></div>
+      <label class="check-row"><input type="checkbox" id="tPin" name="pin"> Pin to High (stays High even if the deadline is far)</label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn--subtle" type="button" data-close>Cancel</button>
+      <button class="btn btn--primary" type="submit">Create</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Create project -->
+<dialog class="modal" id="projectDialog" aria-labelledby="projectDialogTitle">
+  <form id="projectForm" method="dialog" novalidate>
+    <div class="modal-head">
+      <h2 id="projectDialogTitle">Create project</h2>
+      <button class="btn btn--subtle btn--icon" type="button" data-close aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="pName">Project name <span class="req">*</span></label>
+        <input class="input" id="pName" name="name" type="text" autocomplete="off" placeholder="For example: Client portal" aria-describedby="pNameErr">
+        <span class="field-error" id="pNameErr" hidden>Write a project name.</span>
+      </div>
+      <fieldset class="field">
+        <legend>Color</legend>
+        <div class="swatches" id="pColors"></div>
+        <span class="field-help">Red is not offered, because red means High priority.</span>
+      </fieldset>
+      <div class="field">
+        <label for="pDate">Project deadline <span class="req">*</span></label>
+        <input class="input" id="pDate" name="deadline" type="date" aria-describedby="pDateHelp">
+        <span class="field-help" id="pDateHelp">Tasks without their own date use this deadline.</span>
+      </div>
+      <div class="field">
+        <span class="small muted" style="font-weight:653">Preview</span>
+        <div class="project-preview" id="pPreview"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn--subtle" type="button" data-close>Cancel</button>
+      <button class="btn btn--primary" type="submit">Create</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="flagHost"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
