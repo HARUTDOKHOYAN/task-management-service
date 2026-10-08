@@ -6,8 +6,8 @@ services:
       mongo:
         condition: service_healthy
     environment:
-      MONGODB_URI: mongodb://mongo:27017
-      MONGODB_DB: focus-list
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
+      MONGODB_DB: ${MONGODB_DB:-focus-list}
       APP_USER: ${APP_USER:-me}
       APP_PASSWORD: ${APP_PASSWORD:?Set APP_PASSWORD in .env}
     ports:

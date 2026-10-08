@@ -88,6 +88,8 @@ cp .env.docker.example .env
 ```
 
 Edit `.env`:
+- `MONGODB_URI`: MongoDB server URL. Default `mongodb://mongo:27017` is the MongoDB container. Change it only to use another MongoDB server.
+- `MONGODB_DB`: database name (default `focus-list`).
 - `APP_PASSWORD`: a long password. **Required.** The app does not start without it.
 - `APP_USER`: login name (default `me`).
 - `APP_PORT`: port for plain HTTP (default `3001`).
