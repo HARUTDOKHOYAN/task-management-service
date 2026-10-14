@@ -63,8 +63,9 @@ export function sortTasks(list: TaskInfo[]): TaskInfo[] {
   return [...list].sort(compareInfo);
 }
 
-export type MainGroup = { project: Project; high: TaskInfo[]; medium: number; low: number };
+export type MainGroup = { project: Project; top: TaskInfo[]; high: TaskInfo[]; medium: number; low: number; open: number };
 
+/** Projects with open tasks, each with its top 3 tasks. Most urgent project first. */
 export function groupForMain(
   tasks: Task[],
   projects: Project[],
@@ -75,15 +76,15 @@ export function groupForMain(
     const mine = sortTasks(open.filter((x) => x.task.projectId === project.id));
     return {
       project,
+      top: mine.slice(0, 3),
       high: mine.filter((x) => x.level === "high"),
       medium: mine.filter((x) => x.level === "medium").length,
       low: mine.filter((x) => x.level === "low").length,
+      open: mine.length,
     };
   });
-  const active = groups
-    .filter((g) => g.high.length > 0)
-    .sort((a, b) => dueTime(a.high[0]) - dueTime(b.high[0]));
-  const quiet = groups.filter((g) => g.high.length === 0).map((g) => g.project);
+  const active = groups.filter((g) => g.open > 0).sort((a, b) => compareInfo(a.top[0], b.top[0]));
+  const quiet = groups.filter((g) => g.open === 0).map((g) => g.project);
   return { active, quiet };
 }
 
@@ -112,9 +113,4 @@ function loadDays(tasks: Task[], projects: Project[], now: Date, count: number):
     days[Math.max(0, x.due.days)][x.level] += 1; // overdue counts on today
   }
   return days;
-}
-
-/** The next open tasks to work on: highest priority first, then soonest deadline. */
-export function topTasks(tasks: Task[], projects: Project[], now: Date, limit: number): TaskInfo[] {
-  return sortTasks(tasks.map((t) => infoOf(t, projects, now)).filter((x) => x.level !== "done")).slice(0, limit);
 }

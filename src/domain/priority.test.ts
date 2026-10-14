@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dueOf, groupForMain, infoOf, isOverdue, levelOf, sortTasks, weekLoad, projectLoad, topTasks } from "./priority";
+import { dueOf, groupForMain, infoOf, isOverdue, levelOf, sortTasks, weekLoad, projectLoad } from "./priority";
 import type { Project, Task } from "./types";
 
 const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", note: "", createdAt: "", updatedAt: "" };
@@ -67,20 +67,30 @@ describe("priority", () => {
     list.push(infoOf(task({ id: "f", projectId: "none" }), [P], now));
     expect(sortTasks(list).map((x) => x.task.id)).toEqual(["c", "b", "e", "a", "f", "d"]);
   });
-  it("groups only projects with High tasks, earliest first", () => {
+  it("groups projects with open tasks, top 3 each, most urgent project first", () => {
     const Q: Project = { ...P, id: "q" };
     const R: Project = { ...P, id: "r" };
+    const S: Project = { ...P, id: "s", deadline: "2027-08-12" };
     const tasks = [
       task({ id: "1", projectId: "p", date: "2026-10-09" }),
       task({ id: "2", projectId: "q", date: "2026-10-08", time: "16:00" }),
       task({ id: "3", projectId: "r", date: "2026-10-11" }),
       task({ id: "4", projectId: "p", date: "2026-10-10" }),
       task({ id: "5", projectId: "p", done: true }),
+      task({ id: "6", projectId: "p", date: "2026-11-30" }),
+      task({ id: "7", projectId: "p", date: "2026-10-20" }),
+      task({ id: "8", projectId: "s" }),
     ];
-    const g = groupForMain(tasks, [P, Q, R], now);
-    expect(g.active.map((x) => x.project.id)).toEqual(["q", "p"]);
-    expect(g.active[1].medium).toBe(1);
-    expect(g.quiet.map((p) => p.id)).toEqual(["r"]);
+    const g = groupForMain(tasks, [P, Q, R, S, { ...P, id: "empty" }], now);
+    expect(g.active.map((x) => x.project.id)).toEqual(["q", "p", "r", "s"]);
+    const p = g.active[1];
+    expect(p.top.map((x) => x.task.id)).toEqual(["1", "4", "7"]);
+    expect(p.high).toHaveLength(1);
+    expect(p.medium).toBe(1);
+    expect(p.low).toBe(2);
+    expect(p.open).toBe(4);
+    expect(g.active[3].high).toHaveLength(0);
+    expect(g.quiet.map((x) => x.id)).toEqual(["empty"]);
   });
   it("week load counts overdue on today and skips done and far tasks", () => {
     const tasks = [
@@ -114,20 +124,5 @@ describe("projectLoad", () => {
     expect(days[0].high).toBe(2);
     expect(days[12].low).toBe(1);
     expect(days.reduce((s, d) => s + d.high + d.medium + d.low, 0)).toBe(3);
-  });
-});
-
-describe("topTasks", () => {
-  it("returns open tasks by priority, then by time, up to the limit", () => {
-    const tasks = [
-      task({ id: "low", date: "2026-11-30" }),
-      task({ id: "done", date: "2026-10-08", done: true }),
-      task({ id: "highLate", date: "2026-10-09" }),
-      task({ id: "highSoon", date: "2026-10-08", time: "18:00" }),
-      task({ id: "pinned", date: "2026-11-30", pinned: true }),
-    ];
-    const ids = topTasks(tasks, [P], now, 3).map((x) => x.task.id);
-    expect(ids).toEqual(["highSoon", "highLate", "pinned"]);
-    expect(topTasks(tasks, [P], now, 10).map((x) => x.task.id)).not.toContain("done");
   });
 });

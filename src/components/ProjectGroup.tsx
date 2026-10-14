@@ -6,8 +6,8 @@ import { TaskRow } from "./TaskRow";
 import { Lozenge, NextStep, Tile } from "./ui";
 
 export function ProjectGroup({ group }: { group: MainGroup }) {
-  const { project: p, high } = group;
-  const first = high[0];
+  const { project: p, top, high } = group;
+  const first = top[0];
   const navigate = useNavigate();
   const openProject = () => {
     const s = useStore.getState();
@@ -19,7 +19,7 @@ export function ProjectGroup({ group }: { group: MainGroup }) {
       <div className="group-head">
         <Tile color={p.color} />
         <h2 id={`g-${p.id}`}>{p.name}</h2>
-        <Lozenge level="high" text={`${high.length} High`} />
+        {high.length > 0 && <Lozenge level="high" text={`${high.length} High`} />}
         <span className="group-next">
           Next due{" "}
           <strong className={first.overdue ? "is-late" : ""}>
@@ -28,10 +28,12 @@ export function ProjectGroup({ group }: { group: MainGroup }) {
         </span>
       </div>
       <NextStep note={p.note} />
-      {high.map((x) => <TaskRow key={x.task.id} x={x} />)}
+      {top.map((x) => <TaskRow key={x.task.id} x={x} showLevel />)}
       <div className="group-foot">
         <button className="link-btn" type="button" onClick={openProject}>Open project</button>
-        <span className="muted">{group.medium} Medium, {group.low} Low</span>
+        <span className="muted">
+          {group.open > top.length ? `Top ${top.length} of ${group.open}. ` : ""}{high.length} High, {group.medium} Medium, {group.low} Low
+        </span>
       </div>
     </section>
   );

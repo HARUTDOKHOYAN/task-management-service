@@ -336,6 +336,3 @@ button, input, select { font: inherit; color: inherit; }
 .busy-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; }
 .busy-legend .btn { margin-left: auto; }
 
-/* Top 3 tasks on the main page */
-.top-task { display: flex; flex-direction: column; }
-.top-task__project { display: flex; align-items: center; gap: 6px; padding: 8px 16px 0; }

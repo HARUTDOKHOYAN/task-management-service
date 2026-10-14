@@ -1,12 +1,11 @@
 import { ComingNext } from "../components/ComingNext";
 import { PriorityRules } from "../components/PriorityRules";
 import { ProjectGroup } from "../components/ProjectGroup";
-import { TopTasks } from "../components/TopTasks";
 import { Tile } from "../components/ui";
 import { WeekLoad } from "../components/WeekLoad";
 import { fmtDay, fmtLong, parseISO } from "../domain/dates";
 import { plural } from "../domain/format";
-import { groupForMain, infoOf, topTasks, weekLoad } from "../domain/priority";
+import { groupForMain, infoOf, weekLoad } from "../domain/priority";
 import { useStore } from "../store";
 
 export function MainPage() {
@@ -14,11 +13,12 @@ export function MainPage() {
   const open = tasks.map((t) => infoOf(t, projects, now)).filter((x) => x.level !== "done");
   const { active, quiet } = groupForMain(tasks, projects, now);
   const highCount = active.reduce((s, g) => s + g.high.length, 0);
+  const highProjects = active.filter((g) => g.high.length > 0).length;
   const overdue = open.filter((x) => x.overdue).length;
-  const headline = active.length ? `Start with ${active[0].project.name}` : "Nothing urgent right now";
+  const headline = highCount ? `Start with ${active[0].project.name}` : "Nothing urgent right now";
   const summary = [
     overdue ? `${plural(overdue, "task")} overdue.` : "",
-    highCount ? `${plural(highCount, "High task")} across ${plural(active.length, "project")}.` : "No High tasks.",
+    highCount ? `${plural(highCount, "High task")} across ${plural(highProjects, "project")}.` : "No High tasks.",
   ].filter(Boolean).join(" ");
 
   return (
@@ -33,7 +33,6 @@ export function MainPage() {
           <WeekLoad days={weekLoad(tasks, projects, now)} />
         </aside>
         <div className="col col-main">
-          <TopTasks top={topTasks(tasks, projects, now, 3)} projects={projects} />
           {projects.length === 0 && (
             <div className="card empty empty-cta">
               <span>No projects yet. Create a project, then add tasks to it.</span>
@@ -44,13 +43,13 @@ export function MainPage() {
             <div className="card empty">No tasks yet. Use "Create task" to add your first task.</div>
           )}
           {tasks.length > 0 && active.length === 0 && (
-            <div className="card empty">No High tasks right now.</div>
+            <div className="card empty">All tasks are done. Good time to plan ahead.</div>
           )}
           {active.map((g) => <ProjectGroup key={g.project.id} group={g} />)}
           {quiet.map((p) => (
             <div className="quiet" key={p.id}>
               <Tile color={p.color} size="md" />
-              <span><strong>{p.name}</strong> has nothing urgent. Deadline {fmtDay(parseISO(p.deadline))}.</span>
+              <span><strong>{p.name}</strong> has no open tasks. Deadline {fmtDay(parseISO(p.deadline))}.</span>
             </div>
           ))}
         </div>
