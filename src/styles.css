@@ -213,7 +213,7 @@ button, input, select { font: inherit; color: inherit; }
 
 /* ---------- Form fields ---------- */
 .field { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; border: 0; min-width: 0; }
-.field > label, .field > legend { padding: 0; font-size: 12px; line-height: 16px; font-weight: var(--weight-bold); color: var(--ds-text-subtle); }
+.field > label, .field > legend, .field > .label { padding: 0; font-size: 12px; line-height: 16px; font-weight: var(--weight-bold); color: var(--ds-text-subtle); }
 .req { color: var(--ds-text-danger); }
 .input {
   height: 40px; width: 100%; padding: 0 8px;
@@ -314,3 +314,28 @@ button, input, select { font: inherit; color: inherit; }
   .task .task-edit { order: 2; margin: -8px -12px -8px 0; }
   .task .task-meta { order: 3; }
 }
+
+/* Custom project color */
+.custom-color { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.custom-color input { width: 44px; height: 44px; padding: 0; border: 1px solid var(--ds-border); border-radius: 8px; background: none; cursor: pointer; }
+
+/* Busy-days calendar in the task dialog (react-calendar) */
+.busy-cal.react-calendar { width: 100%; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-small); background: var(--ds-surface); color: var(--ds-text); font: inherit; }
+.busy-cal .react-calendar__navigation button { min-height: 44px; color: var(--ds-text); }
+.busy-cal .react-calendar__tile { position: relative; min-height: 44px; color: var(--ds-text); border-radius: 4px; }
+.busy-cal .react-calendar__month-view__days__day--neighboringMonth { color: var(--ds-text-subtlest); }
+.busy-cal .react-calendar__tile:enabled:hover, .busy-cal .react-calendar__tile:enabled:focus { background: var(--ds-background-neutral-hovered); }
+.busy-cal .react-calendar__tile--now { background: none; color: var(--ds-text-brand, var(--ds-background-brand-bold)); font-weight: var(--weight-bold); box-shadow: inset 0 0 0 2px var(--ds-background-brand-bold); }
+.busy-cal .react-calendar__tile--now::after { content: "Today"; display: block; font-size: 9px; line-height: 1; margin-top: 2px; }
+.busy-1 { background: color-mix(in srgb, var(--ds-background-brand-bold) 14%, transparent) !important; }
+.busy-2 { background: color-mix(in srgb, var(--ds-background-brand-bold) 30%, transparent) !important; }
+.busy-3 { background: color-mix(in srgb, var(--ds-background-brand-bold) 50%, transparent) !important; }
+.busy-cal .react-calendar__tile--active, .busy-cal .react-calendar__tile--active:enabled:hover { background: var(--ds-background-brand-bold) !important; color: var(--ds-text-inverse); }
+.busy-count { position: absolute; top: 2px; right: 4px; font-size: 10px; font-weight: 653; }
+.busy-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.busy-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; }
+.busy-legend .btn { margin-left: auto; }
+
+/* Top 3 tasks on the main page */
+.top-task { display: flex; flex-direction: column; }
+.top-task__project { display: flex; align-items: center; gap: 6px; padding: 8px 16px 0; }

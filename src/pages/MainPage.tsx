@@ -1,11 +1,12 @@
 import { ComingNext } from "../components/ComingNext";
 import { PriorityRules } from "../components/PriorityRules";
 import { ProjectGroup } from "../components/ProjectGroup";
+import { TopTasks } from "../components/TopTasks";
 import { Tile } from "../components/ui";
 import { WeekLoad } from "../components/WeekLoad";
 import { fmtDay, fmtLong, parseISO } from "../domain/dates";
 import { plural } from "../domain/format";
-import { groupForMain, infoOf, weekLoad } from "../domain/priority";
+import { groupForMain, infoOf, topTasks, weekLoad } from "../domain/priority";
 import { useStore } from "../store";
 
 export function MainPage() {
@@ -32,6 +33,7 @@ export function MainPage() {
           <WeekLoad days={weekLoad(tasks, projects, now)} />
         </aside>
         <div className="col col-main">
+          <TopTasks top={topTasks(tasks, projects, now, 3)} projects={projects} />
           {projects.length === 0 && (
             <div className="card empty empty-cta">
               <span>No projects yet. Create a project, then add tasks to it.</span>
@@ -42,7 +44,7 @@ export function MainPage() {
             <div className="card empty">No tasks yet. Use "Create task" to add your first task.</div>
           )}
           {tasks.length > 0 && active.length === 0 && (
-            <div className="card empty">No High tasks. Good time to plan ahead.</div>
+            <div className="card empty">No High tasks right now.</div>
           )}
           {active.map((g) => <ProjectGroup key={g.project.id} group={g} />)}
           {quiet.map((p) => (

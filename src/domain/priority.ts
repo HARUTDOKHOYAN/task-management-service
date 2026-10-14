@@ -90,8 +90,17 @@ export function groupForMain(
 export type LoadDay = { date: Date } & Record<OpenLevel, number>;
 
 export function weekLoad(tasks: Task[], projects: Project[], now: Date): LoadDay[] {
+  return loadDays(tasks, projects, now, 7);
+}
+
+/** Open tasks per day for one project. Helps choose a quiet day for a new task. */
+export function projectLoad(tasks: Task[], projects: Project[], projectId: string, now: Date, count: number): LoadDay[] {
+  return loadDays(tasks.filter((t) => t.projectId === projectId), projects, now, count);
+}
+
+function loadDays(tasks: Task[], projects: Project[], now: Date, count: number): LoadDay[] {
   const today = startOfDay(now);
-  const days: LoadDay[] = [0, 1, 2, 3, 4, 5, 6].map((i) => ({
+  const days: LoadDay[] = Array.from({ length: count }, (_, i) => ({
     date: addDays(today, i),
     high: 0,
     medium: 0,
@@ -99,8 +108,13 @@ export function weekLoad(tasks: Task[], projects: Project[], now: Date): LoadDay
   }));
   for (const t of tasks) {
     const x = infoOf(t, projects, now);
-    if (x.level === "done" || !x.due || x.due.days > 6) continue;
+    if (x.level === "done" || !x.due || x.due.days >= count) continue;
     days[Math.max(0, x.due.days)][x.level] += 1; // overdue counts on today
   }
   return days;
+}
+
+/** The next open tasks to work on: highest priority first, then soonest deadline. */
+export function topTasks(tasks: Task[], projects: Project[], now: Date, limit: number): TaskInfo[] {
+  return sortTasks(tasks.map((t) => infoOf(t, projects, now)).filter((x) => x.level !== "done")).slice(0, limit);
 }

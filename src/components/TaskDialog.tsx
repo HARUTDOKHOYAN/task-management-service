@@ -1,5 +1,8 @@
 import { useRef, useState } from "react";
-import { infoOf } from "../domain/priority";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { iso, parseISO } from "../domain/dates";
+import { infoOf, projectLoad } from "../domain/priority";
 import { LEVEL_LABEL, type Task } from "../domain/types";
 import { useStore } from "../store";
 import { Modal } from "./Modal";
@@ -23,6 +26,10 @@ export function TaskDialog({ projectId, taskId }: { projectId?: string; taskId?:
     pinned, done: false, doneAt: null, createdAt: "", updatedAt: "",
   };
   const x = infoOf(draft, projects, now);
+  const others = tasks.filter((t) => t.id !== editing?.id);
+  const busy = new Map(
+    (project ? projectLoad(others, projects, project, now, 400) : []).map((d) => [iso(d.date), d.high + d.medium + d.low]),
+  );
   const why = pinned ? "It is pinned." : !x.due ? "It has no deadline."
     : x.due.days < 0 ? "The deadline has passed." : x.due.days === 0 ? "The deadline is today."
     : x.due.days === 1 ? "The deadline is tomorrow."
@@ -75,19 +82,40 @@ export function TaskDialog({ projectId, taskId }: { projectId?: string; taskId?:
         </select>
         <span className="field-error" id="tProjectErr" hidden={!projectErr}>Choose a project.</span>
       </div>
-      <div className="field-row">
-        <div className="field">
-          <label htmlFor="tDate">Deadline date</label>
-          <input className="input" id="tDate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      <div className="field">
+        <span className="label" id="tDateLabel">Deadline date</span>
+        <Calendar
+          className="busy-cal"
+          locale="en-GB"
+          aria-labelledby="tDateLabel"
+          minDetail="year"
+          value={date ? parseISO(date) : null}
+          onChange={(v) => { if (v instanceof Date) setDate(iso(v)); }}
+          tileClassName={({ date: d, view }) => {
+            if (view !== "month") return null;
+            const n = busy.get(iso(d)) ?? 0;
+            return n === 0 ? null : n === 1 ? "busy-1" : n === 2 ? "busy-2" : "busy-3";
+          }}
+          tileContent={({ date: d, view }) => {
+            const n = view === "month" ? busy.get(iso(d)) ?? 0 : 0;
+            return n ? <span className="busy-count" aria-label={`${n} open ${n === 1 ? "task" : "tasks"}`}>{n}</span> : null;
+          }}
+        />
+        <div className="busy-legend small muted">
+          <span><i className="busy-1" /> 1 task</span>
+          <span><i className="busy-2" /> 2 tasks</span>
+          <span><i className="busy-3" /> 3+ tasks</span>
+          {date && <button type="button" className="btn btn--subtle" onClick={() => { setDate(""); setTime(""); }}>Clear date</button>}
         </div>
-        <div className="field">
-          <label htmlFor="tTime">Time</label>
-          <input className="input" id="tTime" type="time" disabled={!date} value={time} onChange={(e) => setTime(e.target.value)} />
-        </div>
+        <span className="field-help">
+          {project ? "Darker days are busier in this project. Pick a quiet day." : "Choose a project to see busy days."}
+        </span>
       </div>
-      <p className="field-help" style={{ margin: "-12px 0 0" }}>
-        No date? The task uses the project deadline. No time? It is due at the end of the day.
-      </p>
+      <div className="field">
+        <label htmlFor="tTime">Time</label>
+        <input className="input" id="tTime" type="time" disabled={!date} value={time} onChange={(e) => setTime(e.target.value)} />
+        <span className="field-help">No date? The task uses the project deadline. No time? It is due at the end of the day.</span>
+      </div>
       {project ? (
         <div className={`preview-priority is-${x.level}`} role="status">
           <Lozenge level={x.level} />

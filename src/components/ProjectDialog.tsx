@@ -16,13 +16,15 @@ export function ProjectDialog({ projectId }: { projectId?: string }) {
     ? COLORS.find((c) => c.hex === editing.color)
     : COLORS.find((c) => !used.has(c.hex));
   const [name, setName] = useState(editing?.name ?? "");
-  const [colorId, setColorId] = useState<string>((startColor ?? COLORS[0]).id);
+  const [colorHex, setColorHex] = useState<string>(editing?.color ?? (startColor ?? COLORS[0]).hex);
+  const [colorErr, setColorErr] = useState(false);
   const [deadline, setDeadline] = useState(editing?.deadline ?? iso(nextMonday(now)));
   const [nameErr, setNameErr] = useState(false);
   const [dateErr, setDateErr] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
-  const color = COLORS.find((c) => c.id === colorId) ?? COLORS[0];
+  const preset = COLORS.find((c) => c.hex.toLowerCase() === colorHex.toLowerCase());
+  const color = { hex: colorHex, label: preset?.label ?? `Custom (${colorHex})` };
   const taskCount = editing ? tasks.filter((t) => t.projectId === editing.id).length : 0;
 
   const submit = () => {
@@ -70,11 +72,22 @@ export function ProjectDialog({ projectId }: { projectId?: string }) {
         <div className="swatches">
           {COLORS.map((c) => (
             <label className="swatch-opt" key={c.id}>
-              <input type="radio" name="color" value={c.id} aria-label={c.label} checked={c.id === colorId} onChange={() => setColorId(c.id)} />
+              <input type="radio" name="color" value={c.id} aria-label={c.label} checked={c.hex === preset?.hex} onChange={() => { setColorHex(c.hex); setColorErr(false); }} />
               <span style={{ backgroundColor: c.hex }}><CheckIcon /></span>
             </label>
           ))}
         </div>
+        <div className="custom-color">
+          <input
+            id="pCustomColor" type="color" value={colorHex} aria-describedby="pColorErr"
+            onChange={(e) => {
+              if (isReddish(e.target.value)) { setColorErr(true); return; }
+              setColorErr(false); setColorHex(e.target.value);
+            }}
+          />
+          <label htmlFor="pCustomColor">Custom color</label>
+        </div>
+        <span className="field-error" id="pColorErr" hidden={!colorErr}>Red is not allowed. Choose another color.</span>
         <span className="field-help">Red is not offered, because red means High priority.</span>
       </fieldset>
       <div className="field">
@@ -101,4 +114,14 @@ export function ProjectDialog({ projectId }: { projectId?: string }) {
       </div>
     </Modal>
   );
+}
+
+/** True for red shades. Red is reserved for High priority. */
+function isReddish(hex: string): boolean {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (max !== r || max - min < 0.25) return false;
+  const hue = (60 * (g - b)) / (max - min);
+  return hue < 20 && hue > -25;
 }

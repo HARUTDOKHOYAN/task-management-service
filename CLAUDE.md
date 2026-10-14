@@ -10,7 +10,7 @@ Personal task manager. One user, phone and computer. Read PLAN.md for the phases
 - TypeScript strict mode. No `any`.
 - Priority logic lives only in `src/domain/priority.ts`, as pure functions. Pass "now" as a parameter. Never store priority in the database.
 - UI: Atlaskit components and `@atlaskit/tokens` (`token('color.text')`, etc.). No hard-coded colors, except project colors.
-- Project colors: the 9 Atlassian accent "bolder" colors in `prototype/app.js` (COLORS). Never red: red means High priority.
+- Project colors: the 9 Atlassian accent "bolder" colors in `src/domain/types.ts` (COLORS) are the templates. The user can also pick a custom color. Never red: red means High priority (`isReddish` in `ProjectDialog.tsx` blocks it).
 - Accessibility: every input has a label, icon buttons have `aria-label`, accordion uses `aria-expanded`, modals trap focus.
 - Phone: touch targets at least 44 px. Week load and right column are desktop only.
 - Write tests first for domain logic. Run `npm test` before you say a task is done.

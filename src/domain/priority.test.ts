@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dueOf, groupForMain, infoOf, isOverdue, levelOf, sortTasks, weekLoad } from "./priority";
+import { dueOf, groupForMain, infoOf, isOverdue, levelOf, sortTasks, weekLoad, projectLoad, topTasks } from "./priority";
 import type { Project, Task } from "./types";
 
 const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", note: "", createdAt: "", updatedAt: "" };
@@ -95,5 +95,39 @@ describe("priority", () => {
     expect(w[0].high).toBe(2);
     expect(w[3].medium).toBe(1);
     expect(w.reduce((s, d) => s + d.high + d.medium + d.low, 0)).toBe(3);
+  });
+});
+
+describe("projectLoad", () => {
+  it("counts open tasks per day for one project only", () => {
+    const Q: Project = { ...P, id: "q" };
+    const tasks = [
+      task({ id: "a", date: "2026-10-08" }),
+      task({ id: "b", date: "2026-10-08" }),
+      task({ id: "c", date: "2026-10-20" }),
+      task({ id: "d", date: "2026-10-08", done: true }),
+      task({ id: "e", projectId: "q", date: "2026-10-08" }),
+      task({ id: "f", date: "2026-11-30" }),
+    ];
+    const days = projectLoad(tasks, [P, Q], "p", now, 14);
+    expect(days).toHaveLength(14);
+    expect(days[0].high).toBe(2);
+    expect(days[12].low).toBe(1);
+    expect(days.reduce((s, d) => s + d.high + d.medium + d.low, 0)).toBe(3);
+  });
+});
+
+describe("topTasks", () => {
+  it("returns open tasks by priority, then by time, up to the limit", () => {
+    const tasks = [
+      task({ id: "low", date: "2026-11-30" }),
+      task({ id: "done", date: "2026-10-08", done: true }),
+      task({ id: "highLate", date: "2026-10-09" }),
+      task({ id: "highSoon", date: "2026-10-08", time: "18:00" }),
+      task({ id: "pinned", date: "2026-11-30", pinned: true }),
+    ];
+    const ids = topTasks(tasks, [P], now, 3).map((x) => x.task.id);
+    expect(ids).toEqual(["highSoon", "highLate", "pinned"]);
+    expect(topTasks(tasks, [P], now, 10).map((x) => x.task.id)).not.toContain("done");
   });
 });
