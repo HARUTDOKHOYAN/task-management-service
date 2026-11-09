@@ -104,6 +104,10 @@ Check: `curl http://127.0.0.1:3001/api/health` on the server prints `{"ok":true}
 
 ### 4. nginx in front (login + HTTPS)
 
+**nginx on another PC in the local network:** follow [docs/NGINX.md](docs/NGINX.md) (app settings, firewall, nginx config, checks).
+
+**nginx on the same PC:** keep `APP_PORT=127.0.0.1:3001` and use the block below.
+
 Add a `location` to your nginx site (the server block that already has your login and certificate):
 
 ```nginx
@@ -173,5 +177,5 @@ docker compose exec -T mongo mongorestore --archive < focus-list.archive
 
 - The app must have a login when it is reachable from the internet: nginx login, or `APP_PASSWORD`.
 - Use HTTPS (nginx or Caddy) on the internet.
-- Keep `APP_PORT=127.0.0.1:3001`, so nobody can skip nginx and its login.
+- Only nginx may reach port 3001 (`APP_PORT=127.0.0.1:3001`, or a firewall rule when nginx is on another PC). Otherwise people can skip the nginx login.
 - MongoDB is not exposed outside Docker. Keep it that way.
