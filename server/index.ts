@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { MongoClient, type Collection } from "mongodb";
-import type { Project, Task } from "../src/domain/types";
+import type { FreeTask, Project, Routine, Task } from "../src/domain/types";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB ?? "focus-list";
@@ -17,6 +17,8 @@ await client.connect();
 const db = client.db(dbName);
 const projects: Collection<Doc<Project>> = db.collection("projects");
 const tasks: Collection<Doc<Task>> = db.collection("tasks");
+const freeTasks: Collection<Doc<FreeTask>> = db.collection("freeTasks");
+const routines: Collection<Doc<Routine>> = db.collection("routines");
 await tasks.createIndex({ projectId: 1 });
 
 
@@ -30,10 +32,21 @@ function asProject(b: Record<string, unknown>): Project | null {
 }
 function asTask(b: Record<string, unknown>): Task | null {
   const { id, projectId, name, date, time, pinned, done, doneAt, createdAt, updatedAt } = b;
+  const archivedAt = b.archivedAt ?? null; // older tasks have no archivedAt
   if (![id, projectId, name, createdAt, updatedAt].every(isStr)) return null;
-  if (![date, time, doneAt].every(isStrOrNull)) return null;
+  if (![date, time, doneAt, archivedAt].every(isStrOrNull)) return null;
   if (typeof pinned !== "boolean" || typeof done !== "boolean") return null;
-  return { id, projectId, name, date, time, pinned, done, doneAt, createdAt, updatedAt } as Task;
+  return { id, projectId, name, date, time, pinned, done, doneAt, archivedAt, createdAt, updatedAt } as Task;
+}
+function asFreeTask(b: Record<string, unknown>): FreeTask | null {
+  const { id, name, done, doneAt, createdAt, updatedAt } = b;
+  if (![id, name, createdAt, updatedAt].every(isStr) || !isStrOrNull(doneAt) || typeof done !== "boolean") return null;
+  return { id, name, done, doneAt, createdAt, updatedAt } as FreeTask;
+}
+function asRoutine(b: Record<string, unknown>): Routine | null {
+  const { id, projectId, name, doneOn, createdAt, updatedAt } = b;
+  if (![id, projectId, name, createdAt, updatedAt].every(isStr) || !isStrOrNull(doneOn)) return null;
+  return { id, projectId, name, doneOn, createdAt, updatedAt } as Routine;
 }
 const strip = <T>({ _id, ...rest }: Doc<T>) => rest as T;
 
@@ -66,8 +79,13 @@ if (password) {
 app.use(express.json());
 
 app.get("/api/data", async (_req: Request, res: Response) => {
-  const [p, t] = await Promise.all([projects.find().sort({ createdAt: 1 }).toArray(), tasks.find().toArray()]);
-  res.json({ projects: p.map(strip), tasks: t.map(strip) });
+  const [p, t, f, r] = await Promise.all([
+    projects.find().sort({ createdAt: 1 }).toArray(),
+    tasks.find().toArray(),
+    freeTasks.find().toArray(),
+    routines.find().toArray(),
+  ]);
+  res.json({ projects: p.map(strip), tasks: t.map(strip), freeTasks: f.map(strip), routines: r.map(strip) });
 });
 
 app.put("/api/projects/:id", async (req: Request, res: Response) => {
@@ -89,10 +107,30 @@ app.delete("/api/tasks/:id", async (req: Request, res: Response) => {
   res.status(204).end();
 });
 
-/* Deleting a project also deletes its tasks. */
+app.put("/api/free-tasks/:id", async (req: Request, res: Response) => {
+  const t = asFreeTask(req.body);
+  if (!t || t.id !== req.params.id) return void res.status(400).json({ error: "Invalid free time task" });
+  await freeTasks.replaceOne({ _id: t.id }, t, { upsert: true });
+  res.json(t);
+});
+
+app.put("/api/routines/:id", async (req: Request, res: Response) => {
+  const r = asRoutine(req.body);
+  if (!r || r.id !== req.params.id) return void res.status(400).json({ error: "Invalid daily job" });
+  await routines.replaceOne({ _id: r.id }, r, { upsert: true });
+  res.json(r);
+});
+
+app.delete("/api/routines/:id", async (req: Request, res: Response) => {
+  await routines.deleteOne({ _id: String(req.params.id) });
+  res.status(204).end();
+});
+
+/* Deleting a project also deletes its tasks (archived ones too) and its daily jobs. */
 app.delete("/api/projects/:id", async (req: Request, res: Response) => {
   const id = String(req.params.id);
   await tasks.deleteMany({ projectId: id });
+  await routines.deleteMany({ projectId: id });
   await projects.deleteOne({ _id: id });
   res.status(204).end();
 });

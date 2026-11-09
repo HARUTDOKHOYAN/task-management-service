@@ -1,14 +1,18 @@
 import { dueMain, dueSub } from "../domain/format";
 import type { TaskInfo } from "../domain/priority";
+import type { Project } from "../domain/types";
 import { useStore } from "../store";
-import { Lozenge, PencilIcon } from "./ui";
+import { canArchive } from "../domain/archive";
+import { ArchiveIcon, Lozenge, PencilIcon, Tile } from "./ui";
 
-export function TaskRow({ x, showLevel = false }: { x: TaskInfo; showLevel?: boolean }) {
+/* With `project`, the row also shows which project the task belongs to. `compact` fits narrow side panels. */
+export function TaskRow({ x, showLevel = false, project, compact = false }: { x: TaskInfo; showLevel?: boolean; project?: Project; compact?: boolean }) {
   const setDone = useStore((s) => s.setDone);
   const openTaskDialog = useStore((s) => s.openTaskDialog);
+  const archiveTasks = useStore((s) => s.archiveTasks);
   const { task, overdue } = x;
   return (
-    <div className={`task${task.done ? " is-done" : ""}`}>
+    <div className={`task${task.done ? " is-done" : ""}${compact ? " task--compact" : ""}`}>
       <input
         type="checkbox"
         checked={task.done}
@@ -18,6 +22,12 @@ export function TaskRow({ x, showLevel = false }: { x: TaskInfo; showLevel?: boo
       <span className="task-name">
         {task.name}
         {task.pinned && !task.done && <> <span className="small muted">(pinned)</span></>}
+        {project && (
+          <span className="task-project small muted">
+            <Tile color={project.color} size="sm" />
+            {project.name}
+          </span>
+        )}
       </span>
       <span className="task-meta">
         {overdue && <Lozenge level="overdue" />}
@@ -27,6 +37,17 @@ export function TaskRow({ x, showLevel = false }: { x: TaskInfo; showLevel?: boo
           <span>{dueSub(x)}</span>
         </span>
       </span>
+      {canArchive(task) && (
+        <button
+          className="btn btn--subtle btn--icon task-edit"
+          type="button"
+          aria-label={`Archive task: ${task.name}`}
+          title="Archive"
+          onClick={() => archiveTasks([task.id])}
+        >
+          <ArchiveIcon />
+        </button>
+      )}
       <button
         className="btn btn--subtle btn--icon task-edit"
         type="button"

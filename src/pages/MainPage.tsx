@@ -1,17 +1,21 @@
+import { useState } from "react";
 import { ComingNext } from "../components/ComingNext";
-import { PriorityRules } from "../components/PriorityRules";
+import { FreeTime } from "../components/FreeTime";
+import { HighTasksDialog } from "../components/HighTasksDialog";
 import { ProjectGroup } from "../components/ProjectGroup";
 import { Tile } from "../components/ui";
 import { WeekLoad } from "../components/WeekLoad";
 import { fmtDay, fmtLong, parseISO } from "../domain/dates";
 import { plural } from "../domain/format";
-import { groupForMain, infoOf, weekLoad } from "../domain/priority";
+import { groupForMain, highTasks, infoOf, weekLoad } from "../domain/priority";
 import { useStore } from "../store";
 
 export function MainPage() {
   const { projects, tasks, now, openProjectDialog } = useStore();
   const open = tasks.map((t) => infoOf(t, projects, now)).filter((x) => x.level !== "done");
   const { active, quiet } = groupForMain(tasks, projects, now);
+  const high = highTasks(tasks, projects, now);
+  const [showHigh, setShowHigh] = useState(false);
   const highCount = active.reduce((s, g) => s + g.high.length, 0);
   const highProjects = active.filter((g) => g.high.length > 0).length;
   const overdue = open.filter((x) => x.overdue).length;
@@ -27,7 +31,16 @@ export function MainPage() {
         <div className="eyebrow-date">{fmtLong(now)}</div>
         <h1 className="h1">{headline}</h1>
         <p className="lead">{summary}</p>
+        {high.length > 0 && (
+          <div className="high-open">
+            <button className="btn btn--high" type="button" onClick={() => setShowHigh(true)}>
+              See all High tasks
+              <span className="count-badge">{high.length}</span>
+            </button>
+          </div>
+        )}
       </header>
+      {showHigh && <HighTasksDialog list={high} projects={projects} onClose={() => setShowHigh(false)} />}
       <div className="columns">
         <aside className="col col-left" aria-label="This week's load">
           <WeekLoad days={weekLoad(tasks, projects, now)} />
@@ -52,9 +65,12 @@ export function MainPage() {
               <span><strong>{p.name}</strong> has no open tasks. Deadline {fmtDay(parseISO(p.deadline))}.</span>
             </div>
           ))}
+          <div className="free-small">
+            <FreeTime variant="accordion" />
+          </div>
         </div>
         <aside className="col col-right">
-          <PriorityRules />
+          <FreeTime variant="card" />
           <ComingNext open={open} projects={projects} />
         </aside>
       </div>

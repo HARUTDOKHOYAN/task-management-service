@@ -5,7 +5,10 @@ import { ConfirmDeleteProject } from "./components/ConfirmDeleteProject";
 import { ProjectDialog } from "./components/ProjectDialog";
 import { TaskDialog } from "./components/TaskDialog";
 import { TopNav } from "./components/TopNav";
+import { ArchivePage } from "./pages/ArchivePage";
+import { DailyPage } from "./pages/DailyPage";
 import { MainPage } from "./pages/MainPage";
+import { PlannerPage } from "./pages/PlannerPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { useStore } from "./store";
 
@@ -41,16 +44,19 @@ export function App() {
         )}
         {status === "ready" && (
           <Routes>
-            <Route path="/" element={<MainPage />} />
+            <Route path="/" element={<DailyPage />} />
+            <Route path="/main" element={<MainPage />} />
+            <Route path="/planner" element={<PlannerPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="*" element={<MainPage />} />
+            <Route path="/archive" element={<ArchivePage />} />
+            <Route path="*" element={<DailyPage />} />
           </Routes>
         )}
       </div>
       <button className="btn btn--primary fab-create" type="button" onClick={() => openTaskDialog()}>
         Create task
       </button>
-      {taskDialog && <TaskDialog projectId={taskDialog.projectId} taskId={taskDialog.taskId} />}
+      {taskDialog && <TaskDialog projectId={taskDialog.projectId} taskId={taskDialog.taskId} date={taskDialog.date} />}
       {projectDialog && !confirmDeleteProject && <ProjectDialog projectId={projectDialog.projectId} />}
       {confirmDeleteProject && <ConfirmDeleteProject projectId={confirmDeleteProject} />}
       <Flag />

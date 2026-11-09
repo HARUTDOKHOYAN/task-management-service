@@ -17,11 +17,32 @@ export type Task = {
   pinned: boolean;
   done: boolean;
   doneAt: string | null;
+  archivedAt: string | null; // set when a done task goes to the Archive page
   createdAt: string;
   updatedAt: string;
 };
 
-export type Level = "high" | "medium" | "low" | "done";
+/* Daily job for a project, for example "Check Bugsnag". Shows every day; checks reset at midnight. */
+export type Routine = {
+  id: string;
+  projectId: string;
+  name: string;
+  doneOn: string | null; // "YYYY-MM-DD" of the last day it was checked
+  createdAt: string;
+  updatedAt: string;
+};
+
+/* Mini task for free time: no project, no deadline, no priority. */
+export type FreeTask = {
+  id: string;
+  name: string;
+  done: boolean;
+  doneAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Level ="high" | "medium" | "low" | "done";
 export type OpenLevel = Exclude<Level, "done">;
 
 export const LEVEL_LABEL: Record<Level, string> = {

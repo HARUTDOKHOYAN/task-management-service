@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { dueOf, groupForMain, infoOf, isOverdue, levelOf, sortTasks, weekLoad, projectLoad } from "./priority";
+import { allLoad, dueOf, groupForMain, highTasks, infoOf, isOverdue, levelOf, sortTasks, weekLoad, projectLoad } from "./priority";
 import type { Project, Task } from "./types";
 
 const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", note: "", createdAt: "", updatedAt: "" };
 const now = new Date(2026, 9, 8, 15, 0); // Thu 8 Oct 2026, 15:00
 
 function task(over: Partial<Task> = {}): Task {
-  return { id: "t", projectId: "p", name: "T", date: null, time: null, pinned: false, done: false, doneAt: null, createdAt: "", updatedAt: "", ...over };
+  return { id: "t", projectId: "p", name: "T", date: null, time: null, pinned: false, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "", ...over };
 }
 const level = (t: Task, n = now, p = P) => levelOf(t, dueOf(t, p, n));
 
@@ -124,5 +124,36 @@ describe("projectLoad", () => {
     expect(days[0].high).toBe(2);
     expect(days[12].low).toBe(1);
     expect(days.reduce((s, d) => s + d.high + d.medium + d.low, 0)).toBe(3);
+  });
+});
+
+describe("highTasks", () => {
+  it("lists open High tasks from all projects, earliest deadline first", () => {
+    const Q: Project = { ...P, id: "q", deadline: "2026-12-01" };
+    const tasks = [
+      task({ id: "a", date: "2026-10-09", time: "10:00" }),
+      task({ id: "b", projectId: "q", date: "2026-10-07" }),
+      task({ id: "c", date: "2026-10-08", done: true }),
+      task({ id: "d", date: "2026-10-11" }),
+      task({ id: "e", projectId: "q", pinned: true }),
+      task({ id: "f", date: "2026-10-08", time: "16:00" }),
+    ];
+    expect(highTasks(tasks, [P, Q], now).map((x) => x.task.id)).toEqual(["b", "f", "a", "e"]);
+  });
+});
+
+describe("allLoad", () => {
+  it("counts open tasks per day from every project", () => {
+    const Q: Project = { ...P, id: "q" };
+    const tasks = [
+      task({ id: "a", date: "2026-10-09" }),
+      task({ id: "b", projectId: "q", date: "2026-10-09" }),
+      task({ id: "c", projectId: "q", date: "2026-10-09", done: true }),
+      task({ id: "d", date: "2026-10-05" }),
+    ];
+    const days = allLoad(tasks, [P, Q], now, 30);
+    expect(days).toHaveLength(30);
+    expect(days[1].high).toBe(2);
+    expect(days[0].high).toBe(1); // overdue counts on today
   });
 });

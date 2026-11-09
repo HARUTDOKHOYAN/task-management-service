@@ -63,7 +63,12 @@ export function sortTasks(list: TaskInfo[]): TaskInfo[] {
   return [...list].sort(compareInfo);
 }
 
-export type MainGroup = { project: Project; top: TaskInfo[]; high: TaskInfo[]; medium: number; low: number; open: number };
+/** All open High tasks from every project, earliest deadline first. */
+export function highTasks(tasks: Task[], projects: Project[], now: Date): TaskInfo[] {
+  return sortTasks(tasks.map((t) => infoOf(t, projects, now)).filter((x) => x.level === "high"));
+}
+
+export type MainGroup ={ project: Project; top: TaskInfo[]; high: TaskInfo[]; medium: number; low: number; open: number };
 
 /** Projects with open tasks, each with its top 3 tasks. Most urgent project first. */
 export function groupForMain(
@@ -92,6 +97,11 @@ export type LoadDay = { date: Date } & Record<OpenLevel, number>;
 
 export function weekLoad(tasks: Task[], projects: Project[], now: Date): LoadDay[] {
   return loadDays(tasks, projects, now, 7);
+}
+
+/** Open tasks per day for all projects. */
+export function allLoad(tasks: Task[], projects: Project[], now: Date, count: number): LoadDay[] {
+  return loadDays(tasks, projects, now, count);
 }
 
 /** Open tasks per day for one project. Helps choose a quiet day for a new task. */

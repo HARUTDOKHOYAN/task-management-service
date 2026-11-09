@@ -1,4 +1,4 @@
-import type { Project, Task } from "./domain/types";
+import type { FreeTask, Project, Routine, Task } from "./domain/types";
 
 async function call(url: string, init?: RequestInit): Promise<Response> {
   const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...init });
@@ -10,9 +10,12 @@ const del = (url: string) => call(url, { method: "DELETE" });
 const enc = encodeURIComponent;
 
 export const api = {
-  load: async () => (await call("/api/data")).json() as Promise<{ projects: Project[]; tasks: Task[] }>,
+  load: async () => (await call("/api/data")).json() as Promise<{ projects: Project[]; tasks: Task[]; freeTasks?: FreeTask[]; routines?: Routine[] }>,
   saveProject: (p: Project) => put(`/api/projects/${enc(p.id)}`, p),
   saveTask: (t: Task) => put(`/api/tasks/${enc(t.id)}`, t),
+  saveFreeTask: (t: FreeTask) => put(`/api/free-tasks/${enc(t.id)}`, t),
   deleteProject: (id: string) => del(`/api/projects/${enc(id)}`),
   deleteTask: (id: string) => del(`/api/tasks/${enc(id)}`),
+  saveRoutine: (r: Routine) => put(`/api/routines/${enc(r.id)}`, r),
+  deleteRoutine: (id: string) => del(`/api/routines/${enc(id)}`),
 };

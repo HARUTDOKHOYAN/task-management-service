@@ -1,19 +1,32 @@
 import { useRef, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { iso, parseISO } from "../domain/dates";
-import { infoOf, projectLoad } from "../domain/priority";
+import { fmtDay, iso, parseISO } from "../domain/dates";
+import { plural } from "../domain/format";
+import { allLoad, infoOf, projectLoad } from "../domain/priority";
 import { LEVEL_LABEL, type Task } from "../domain/types";
 import { useStore } from "../store";
 import { Modal } from "./Modal";
 import { Lozenge } from "./ui";
 
-export function TaskDialog({ projectId, taskId }: { projectId?: string; taskId?: string }) {
+/* Which load the calendar shows. Remembered in this browser only. */
+const LOAD_KEY = "focus-list:calendar-load";
+type LoadMode = "all" | "project";
+function readLoadMode(): LoadMode {
+  try {
+    return localStorage.getItem(LOAD_KEY) === "project" ? "project" : "all";
+  } catch {
+    return "all";
+  }
+}
+
+export function TaskDialog({ projectId, taskId, date: startDate }: { projectId?: string; taskId?: string; date?: string }) {
   const { projects, tasks, now, addTask, updateTask, deleteTask, closeDialogs } = useStore();
   const editing = tasks.find((t) => t.id === taskId);
   const [name, setName] = useState(editing?.name ?? "");
   const [project, setProject] = useState(editing?.projectId ?? projectId ?? projects[0]?.id ?? "");
-  const [date, setDate] = useState(editing?.date ?? "");
+  const [date, setDate] = useState(editing?.date ?? startDate ?? "");
+  const [loadMode, setLoadMode] = useState<LoadMode>(readLoadMode);
   const [time, setTime] = useState(editing?.time ?? "");
   const [pinned, setPinned] = useState(editing?.pinned ?? false);
   const [nameErr, setNameErr] = useState(false);
@@ -23,13 +36,20 @@ export function TaskDialog({ projectId, taskId }: { projectId?: string; taskId?:
 
   const draft: Task = {
     id: "draft", projectId: project, name, date: date || null, time: date && time ? time : null,
-    pinned, done: false, doneAt: null, createdAt: "", updatedAt: "",
+    pinned, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "",
   };
   const x = infoOf(draft, projects, now);
   const others = tasks.filter((t) => t.id !== editing?.id);
+  const showAll = loadMode === "all" || !project;
   const busy = new Map(
-    (project ? projectLoad(others, projects, project, now, 400) : []).map((d) => [iso(d.date), d.high + d.medium + d.low]),
+    (showAll ? allLoad(others, projects, now, 400) : projectLoad(others, projects, project, now, 400))
+      .map((d) => [iso(d.date), d.high + d.medium + d.low]),
   );
+  const chooseLoad = (mode: LoadMode) => {
+    setLoadMode(mode);
+    try { localStorage.setItem(LOAD_KEY, mode); } catch { /* storage blocked: not important */ }
+  };
+  const onDay = date ? busy.get(date) ?? 0 : 0;
   const why = pinned ? "It is pinned." : !x.due ? "It has no deadline."
     : x.due.days < 0 ? "The deadline has passed." : x.due.days === 0 ? "The deadline is today."
     : x.due.days === 1 ? "The deadline is tomorrow."
@@ -83,7 +103,22 @@ export function TaskDialog({ projectId, taskId }: { projectId?: string; taskId?:
         <span className="field-error" id="tProjectErr" hidden={!projectErr}>Choose a project.</span>
       </div>
       <div className="field">
-        <span className="label" id="tDateLabel">Deadline date</span>
+        <div className="date-head">
+          <span className="label" id="tDateLabel">Deadline date{date && <>: <b>{fmtDay(parseISO(date))}</b></>}</span>
+          <fieldset className="seg">
+            <legend className="seg-legend">Show load for</legend>
+            <div className="seg-opts">
+              <label className="seg-opt">
+                <input type="radio" name="tLoad" checked={showAll} onChange={() => chooseLoad("all")} />
+                <span>All projects</span>
+              </label>
+              <label className="seg-opt">
+                <input type="radio" name="tLoad" checked={!showAll} disabled={!project} onChange={() => chooseLoad("project")} />
+                <span>This project</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
         <Calendar
           className="busy-cal"
           locale="en-GB"
@@ -108,7 +143,8 @@ export function TaskDialog({ projectId, taskId }: { projectId?: string; taskId?:
           {date && <button type="button" className="btn btn--subtle" onClick={() => { setDate(""); setTime(""); }}>Clear date</button>}
         </div>
         <span className="field-help">
-          {project ? "Darker days are busier in this project. Pick a quiet day." : "Choose a project to see busy days."}
+          {showAll ? "Numbers show open tasks from all your projects." : "Numbers show open tasks in this project only."}{" "}
+          {date ? `${fmtDay(parseISO(date))} has ${onDay ? `${plural(onDay, "task")} already` : "no tasks yet"}.` :"Darker days are busier. Pick a quiet day."}
         </span>
       </div>
       <div className="field">

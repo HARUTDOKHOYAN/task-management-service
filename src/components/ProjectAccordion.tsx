@@ -13,6 +13,7 @@ export function ProjectAccordion({ project: p, tasks, projects, now, isOpen }: P
   const openTaskDialog = useStore((s) => s.openTaskDialog);
   const openProjectDialog = useStore((s) => s.openProjectDialog);
   const askDeleteProject = useStore((s) => s.askDeleteProject);
+  const archiveTasks = useStore((s) => s.archiveTasks);
   const list = sortTasks(tasks.filter((t) => t.projectId === p.id).map((t) => infoOf(t, projects, now)));
   const count = (lv: string) => list.filter((x) => x.level === lv).length;
   const done = count("done");
@@ -57,6 +58,11 @@ export function ProjectAccordion({ project: p, tasks, projects, now, isOpen }: P
           <div className="group-foot">
             <span className="acc-actions">
               <button className="link-btn" type="button" onClick={() => openTaskDialog({ projectId: p.id })}>Add task to this project</button>
+              {done > 0 && (
+                <button className="link-btn" type="button" onClick={() => archiveTasks(list.filter((x) => x.task.done).map((x) => x.task.id))}>
+                  Archive done tasks ({done})
+                </button>
+              )}
               <button className="link-btn" type="button" onClick={() => openProjectDialog(p.id)}>Edit project</button>
               <button className="link-btn btn--danger-text" type="button" onClick={() => askDeleteProject(p.id)}>Delete project</button>
             </span>

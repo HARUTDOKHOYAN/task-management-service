@@ -4,10 +4,11 @@ import { CloseIcon } from "./ui";
 type Props = {
   id: string;
   title: string;
-  submitLabel: string;
+  /* Without onSubmit the dialog only shows a Close button. */
+  submitLabel?: string;
   danger?: boolean;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit?: () => void;
   footerStart?: ReactNode;
   children: ReactNode;
 };
@@ -30,7 +31,7 @@ export function Modal({ id, title, submitLabel, danger, onClose, onSubmit, foote
   }, [opener]);
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit();
+    onSubmit?.();
   };
   return (
     <dialog
@@ -49,8 +50,14 @@ export function Modal({ id, title, submitLabel, danger, onClose, onSubmit, foote
         <div className="modal-body">{children}</div>
         <div className="modal-foot">
           {footerStart && <div className="modal-foot-start">{footerStart}</div>}
-          <button className="btn btn--subtle" type="button" onClick={onClose}>Cancel</button>
-          <button className={`btn ${danger ? "btn--danger" : "btn--primary"}`} type="submit">{submitLabel}</button>
+          {onSubmit ? (
+            <>
+              <button className="btn btn--subtle" type="button" onClick={onClose}>Cancel</button>
+              <button className={`btn ${danger ? "btn--danger" : "btn--primary"}`} type="submit">{submitLabel}</button>
+            </>
+          ) : (
+            <button className="btn" type="button" onClick={onClose}>Close</button>
+          )}
         </div>
       </form>
     </dialog>

@@ -12,7 +12,11 @@
     "start": "tsx --env-file=.env.local server/index.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "serve": "npm run build && npm start"
+    "serve": "npm run build && npm start",
+    "seed:demo": "MONGODB_DB=focus-list-demo tsx --env-file=.env.local server/seed.ts",
+    "dev:demo": "MONGODB_DB=focus-list-demo npm run dev",
+    "mock:add": "tsx --env-file=.env.local server/seed.ts --add",
+    "mock:remove": "tsx --env-file=.env.local server/seed.ts --remove"
   },
   "dependencies": {
     "dexie": "^4.4.6",

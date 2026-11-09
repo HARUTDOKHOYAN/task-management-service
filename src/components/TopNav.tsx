@@ -13,8 +13,11 @@ export function TopNav() {
         Focus list
       </div>
       <div className="nav-links">
-        <NavLink className="nav-link" to="/" end>Main page</NavLink>
+        <NavLink className="nav-link" to="/" end>Daily</NavLink>
+        <NavLink className="nav-link" to="/main">Main page</NavLink>
+        <NavLink className="nav-link" to="/planner">Planner</NavLink>
         <NavLink className="nav-link" to="/projects">Projects</NavLink>
+        <NavLink className="nav-link" to="/archive">Archive</NavLink>
       </div>
       <button className="btn btn--primary" type="button" onClick={() => openTaskDialog()}>
         Create task

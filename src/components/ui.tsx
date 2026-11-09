@@ -45,6 +45,23 @@ export function PencilIcon() {
   );
 }
 
+export function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2.5 4.5h11M6.5 4.5V3h3v1.5M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6" />
+    </svg>
+  );
+}
+
+export function ArchiveIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="3" width="12" height="3" rx="1" />
+      <path d="M3 6v6.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6M6.5 9h3" />
+    </svg>
+  );
+}
+
 export function ChevronIcon() {
   return (
     <svg className="acc-chev" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#505258" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

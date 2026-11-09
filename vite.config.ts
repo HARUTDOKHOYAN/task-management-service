@@ -8,6 +8,6 @@ export default defineConfig({
     proxy: { "/api": `http://localhost:${process.env.API_PORT ?? 3001}` },
   },
   test: {
-    coverage: { include: ["src/domain/priority.ts"], thresholds: { 100: true } },
+    coverage: { include: ["src/domain/priority.ts", "src/domain/freeTime.ts", "src/domain/archive.ts", "src/domain/daily.ts", "src/domain/planner.ts"], thresholds: { 100: true } },
   },
 });
