@@ -30,3 +30,16 @@ export function deadlineLabel(dateStr: string, now: Date): string {
     days < 0 ? `${-days} days late` : days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
   return `${fmtDay(d)} (${when})`;
 }
+
+/** Task size or work left: "30 min", "2 h", "6 h 30 min". */
+export function fmtMinutes(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return [h ? `${h} h` : "", m || !h ? `${m} min` : ""].filter(Boolean).join(" ");
+}
+
+/** Balance score with one decimal: "17.4". */
+export const fmtScore = (n: number) => n.toFixed(1);
+
+/** "today", "yesterday" or "5 days ago". */
+export const daysAgo = (days: number) => (days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`);

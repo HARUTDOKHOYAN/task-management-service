@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { archiveGroups, canArchive, splitArchived } from "./archive";
 import type { Project, Task } from "./types";
 
-const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", note: "", createdAt: "", updatedAt: "" };
+const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", importance: 2, paused: false, note: "", createdAt: "", updatedAt: "" };
 const Q: Project = { ...P, id: "q", name: "Q" };
 
 function task(over: Partial<Task> = {}): Task {
-  return { id: "t", projectId: "p", name: "T", date: null, time: null, pinned: false, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "", ...over };
+  return { id: "t", projectId: "p", name: "T", date: null, time: null, size: 60, pinned: false, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "", ...over };
 }
 
 describe("archive", () => {

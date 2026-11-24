@@ -44,14 +44,30 @@ Priority is never stored. It is calculated every time from the deadline.
 
 ## Priority rules (must match exactly)
 
-- Deadline = task date + time. No date: project deadline. No time: 23:59.
+- Deadline = task date + time. No date: project deadline. No time: 23:59. A project can have no deadline: then the task has no deadline.
 - Days left = calendar days from today to the deadline date.
-- Overdue, today or tomorrow (days left ≤ 1): **High**. 2-3 days: **Medium**. 4+ days: **Low**.
-- Pinned: always **High**. Done: not shown on the main page or in the week load.
+- Overdue, today or tomorrow (days left ≤ 1): **High**. 2-3 days: **Medium**. 4+ days, or no deadline: **Low**.
+- Pinned: always **High**. Done: not shown on the main page.
 - Overdue = deadline time is in the past and the task is not done.
 - Sort: priority level first, then deadline time (earliest first).
-- Main page groups: only projects with High tasks. Group order = earliest High deadline first. Projects with no High tasks: one short line at the bottom.
-- Week load: open tasks for the next 7 days, today first. Overdue tasks count on today.
+
+## Balance rules (must match exactly)
+
+The main page keeps the projects in balance. The goal is a total of 0.
+
+- Task size: 10 min, 30 min, 1 hour, 2 hours, 3 hours or 4 hours. Default: 1 hour.
+- Project importance: High = 3, Normal = 2, Low = 1. Default: Normal.
+- Score of a project = √hours × importance × waiting × deadline.
+  - Hours = the sizes of the open tasks, added up.
+  - Waiting = 1 + days since last work ÷ 7. No cap.
+  - Deadline = 1.5 when an open task is due today or in the next 6 days (overdue too). If not, 1.
+- Days since last work: counted from the day the project was created. A finished task of 1 hour or more sets it to 0. A smaller task lowers it in part: 30 minutes cuts it in half, 10 minutes cuts it by one sixth. Archived tasks count too.
+- Score is 0 when the project has no open tasks or is paused.
+- Total = the sum of all scores. Order: highest score first. Same score: higher importance first.
+- Main page: High tasks from all projects are in "Due now", outside the score. The 2 projects with the highest score are "Work on today". Other projects with a score are "Waiting". Score 0 is "At zero".
+- Today's plan = the High tasks + the next task of each "Work on today" project. Next task = priority level, then deadline, then smaller size, then older task.
+- Last 7 days: the total at the end of each day, calculated from the task dates. Nothing is stored.
+- The score is never stored in the database.
 
 ---
 

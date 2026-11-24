@@ -1,6 +1,6 @@
 import { deadlineLabel } from "../domain/format";
 import { infoOf, sortTasks } from "../domain/priority";
-import { LEVEL_LABEL, type OpenLevel, type Project, type Task } from "../domain/types";
+import { IMPORTANCE_LABEL, LEVEL_LABEL, type OpenLevel, type Project, type Task } from "../domain/types";
 import { useStore } from "../store";
 import { TaskRow } from "./TaskRow";
 import { NoteEditor } from "./NoteEditor";
@@ -34,7 +34,9 @@ export function ProjectAccordion({ project: p, tasks, projects, now, isOpen }: P
           <Tile color={p.color} />
           <span className="acc-title">
             <b>{p.name}</b>
-            <span className="small muted">Deadline {deadlineLabel(p.deadline, now)}</span>
+            <span className="small muted">
+              {IMPORTANCE_LABEL[p.importance]} importance. {p.deadline ? `Deadline ${deadlineLabel(p.deadline, now)}` : "No deadline"}{p.paused ? ". Paused" : ""}
+            </span>
           </span>
           <span className="acc-counts">
             {levels.filter((lv) => count(lv)).map((lv) => (

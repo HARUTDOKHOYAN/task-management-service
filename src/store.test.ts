@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project, Task } from "./domain/types";
 
 vi.mock("./api", () => ({
@@ -15,9 +15,9 @@ vi.mock("./api", () => ({
 const { api } = await import("./api");
 const { useStore } = await import("./store");
 
-const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", note: "", createdAt: "", updatedAt: "" };
+const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", importance: 2, paused: false, note: "", createdAt: "", updatedAt: "" };
 function task(over: Partial<Task> = {}): Task {
-  return { id: "t", projectId: "p", name: "T", date: null, time: null, pinned: false, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "", ...over };
+  return { id: "t", projectId: "p", name: "T", date: null, time: null, size: 60, pinned: false, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "", ...over };
 }
 
 describe("store archive", () => {
@@ -115,5 +115,31 @@ describe("store daily jobs", () => {
   it("deleting a project also removes its daily jobs", () => {
     useStore.getState().deleteProject("p");
     expect(useStore.getState().routines).toHaveLength(0);
+  });
+});
+
+/* The main page shows the tasks "as of now". A change must move "now" forward, or the change is hidden until the next clock tick. */
+describe("store clock", () => {
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 8, 15, 0, 0));
+    vi.mocked(api.load).mockResolvedValue({ projects: [P], tasks: [task({ id: "open" })] });
+    await useStore.getState().load();
+    vi.setSystemTime(new Date(2026, 9, 8, 15, 0, 30)); // 30 seconds later, before the next tick
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  it("a task marked done is done at the store's time", () => {
+    useStore.getState().setDone("open", true);
+    const s = useStore.getState();
+    const doneAt = s.tasks.find((t) => t.id === "open")!.doneAt!;
+    expect(s.now.getTime()).toBeGreaterThanOrEqual(Date.parse(doneAt));
+  });
+  it("a new task exists at the store's time", () => {
+    useStore.getState().addTask({ projectId: "p", name: "New", date: null, time: null, size: 60, pinned: false });
+    const s = useStore.getState();
+    const createdAt = s.tasks.find((t) => t.name === "New")!.createdAt;
+    expect(s.now.getTime()).toBeGreaterThanOrEqual(Date.parse(createdAt));
   });
 });

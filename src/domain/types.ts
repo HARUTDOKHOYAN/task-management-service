@@ -1,8 +1,21 @@
+/* Task size in minutes. The balance score adds them up as hours left. */
+export const SIZES = [10, 30, 60, 120, 180, 240] as const;
+export type Size = (typeof SIZES)[number];
+export const DEFAULT_SIZE: Size = 60;
+
+/* Project importance: the coefficient in the balance score. */
+export type Importance = 1 | 2 | 3;
+export const IMPORTANCES: Importance[] = [3, 2, 1];
+export const DEFAULT_IMPORTANCE: Importance = 2;
+export const IMPORTANCE_LABEL: Record<Importance, string> = { 3: "High", 2: "Normal", 1: "Low" };
+
 export type Project = {
   id: string;
   name: string;
   color: string;
-  deadline: string; // "YYYY-MM-DD"
+  deadline: string | null; // "YYYY-MM-DD"; null = no deadline
+  importance: Importance; // how much attention the project needs, used by the balance score
+  paused: boolean; // a paused project has score 0
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -14,6 +27,7 @@ export type Task = {
   name: string;
   date: string | null; // "YYYY-MM-DD"; null = project deadline
   time: string | null; // "HH:MM"; null = end of day
+  size: Size; // minutes of work
   pinned: boolean;
   done: boolean;
   doneAt: string | null;

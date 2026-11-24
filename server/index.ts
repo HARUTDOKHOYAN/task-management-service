@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { MongoClient, type Collection } from "mongodb";
-import type { FreeTask, Project, Routine, Task } from "../src/domain/types";
+import { DEFAULT_IMPORTANCE, DEFAULT_SIZE, IMPORTANCES, SIZES, type FreeTask, type Importance, type Project, type Routine, type Size, type Task } from "../src/domain/types";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB ?? "focus-list";
@@ -26,17 +26,24 @@ const isStr = (v: unknown): v is string => typeof v === "string";
 const isStrOrNull = (v: unknown) => v === null || isStr(v);
 
 function asProject(b: Record<string, unknown>): Project | null {
-  const { id, name, color, deadline, note, createdAt, updatedAt } = b;
-  if (![id, name, color, deadline, note, createdAt, updatedAt].every(isStr)) return null;
-  return { id, name, color, deadline, note, createdAt, updatedAt } as Project;
+  const { id, name, color, note, createdAt, updatedAt } = b;
+  // Older projects have no importance and no pause. A project can have no deadline.
+  const deadline = b.deadline ?? null;
+  const importance = b.importance ?? DEFAULT_IMPORTANCE;
+  const paused = b.paused ?? false;
+  if (![id, name, color, note, createdAt, updatedAt].every(isStr) || !isStrOrNull(deadline)) return null;
+  if (!IMPORTANCES.includes(importance as Importance) || typeof paused !== "boolean") return null;
+  return { id, name, color, deadline, importance, paused, note, createdAt, updatedAt } as Project;
 }
 function asTask(b: Record<string, unknown>): Task | null {
   const { id, projectId, name, date, time, pinned, done, doneAt, createdAt, updatedAt } = b;
   const archivedAt = b.archivedAt ?? null; // older tasks have no archivedAt
+  const size = b.size ?? DEFAULT_SIZE; // older tasks have no size
+  if (!SIZES.includes(size as Size)) return null;
   if (![id, projectId, name, createdAt, updatedAt].every(isStr)) return null;
   if (![date, time, doneAt, archivedAt].every(isStrOrNull)) return null;
   if (typeof pinned !== "boolean" || typeof done !== "boolean") return null;
-  return { id, projectId, name, date, time, pinned, done, doneAt, archivedAt, createdAt, updatedAt } as Task;
+  return { id, projectId, name, date, time, size, pinned, done, doneAt, archivedAt, createdAt, updatedAt } as Task;
 }
 function asFreeTask(b: Record<string, unknown>): FreeTask | null {
   const { id, name, done, doneAt, createdAt, updatedAt } = b;

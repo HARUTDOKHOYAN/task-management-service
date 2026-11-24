@@ -2,11 +2,11 @@ import { create } from "zustand";
 import { api } from "./api";
 import { canArchive, splitArchived } from "./domain/archive";
 import { toggledDoneOn } from "./domain/daily";
-import type { FreeTask, Project, Routine, Task } from "./domain/types";
+import { DEFAULT_IMPORTANCE, DEFAULT_SIZE, type FreeTask, type Project, type Routine, type Task } from "./domain/types";
 
 type FlagState = { id: number; text: string; undo?: () => void } | null;
-type TaskInput = Pick<Task, "projectId" | "name" | "date" | "time" | "pinned">;
-type ProjectInput = Pick<Project, "name" | "color" | "deadline">;
+type TaskInput = Pick<Task, "projectId" | "name" | "date" | "time" | "size" | "pinned">;
+type ProjectInput = Pick<Project, "name" | "color" | "deadline" | "importance">;
 
 type State = {
   status: "loading" | "ready" | "error";
@@ -38,7 +38,7 @@ type State = {
   addFreeTask: (name: string) => void;
   setFreeDone: (id: string, done: boolean) => void;
   addProject: (p: ProjectInput) => void;
-  updateProject: (id: string, p: Partial<Pick<Project, "name" | "color" | "deadline" | "note">>) => void;
+  updateProject: (id: string, p: Partial<Pick<Project, "name" | "color" | "deadline" | "importance" | "paused" | "note">>) => void;
   deleteProject: (id: string) => void;
   toggleOpen: (id: string) => void;
   setAllOpen: (open: boolean) => void;
@@ -103,8 +103,10 @@ export const useStore = create<State>((set, get) => {
     load: async () => {
       set({ status: "loading" });
       try {
-        const { projects, tasks: all, freeTasks = [], routines = [] } = await api.load();
-        const { active: tasks, archived } = splitArchived(all.map((t) => ({ ...t, archivedAt: t.archivedAt ?? null })));
+        const { projects: rawProjects, tasks: all, freeTasks = [], routines = [] } = await api.load();
+        // Older data has no size, importance or pause: use the defaults.
+        const projects = rawProjects.map((p) => ({ ...p, deadline: p.deadline ?? null, importance: p.importance ?? DEFAULT_IMPORTANCE, paused: p.paused ?? false }));
+        const { active: tasks, archived } = splitArchived(all.map((t) => ({ ...t, archivedAt: t.archivedAt ?? null, size: t.size ?? DEFAULT_SIZE })));
         set({ projects, tasks, archived, freeTasks, routines, status: "ready", now: new Date() });
       } catch {
         set({ status: "error" });
@@ -117,6 +119,7 @@ export const useStore = create<State>((set, get) => {
       if (!old) return;
       const stamp = stampNow();
       const task: Task = { ...old, done, doneAt: done ? stamp : null, updatedAt: stamp };
+      set({ now: new Date(stamp) }); // the balance reads tasks "as of now": move the clock to this change
       replaceTask(task);
       persist(api.saveTask(task), () => replaceTask(old));
       if (done) get().showFlag(`Task done: ${task.name}`, () => get().setDone(id, false));
@@ -125,7 +128,7 @@ export const useStore = create<State>((set, get) => {
     addTask: (input) => {
       const stamp = stampNow();
       const task: Task = { ...input, id: newId("t"), done: false, doneAt: null, archivedAt: null, createdAt: stamp, updatedAt: stamp };
-      set((s) => ({ tasks: [...s.tasks, task] }));
+      set((s) => ({ tasks: [...s.tasks, task], now: new Date(stamp) })); // see setDone
       persist(api.saveTask(task), () => set((s) => ({ tasks: s.tasks.filter((t) => t.id !== task.id) })));
       get().showFlag(`Task created: ${task.name}`);
     },
@@ -238,7 +241,7 @@ export const useStore = create<State>((set, get) => {
 
     addProject: (input) => {
       const stamp = stampNow();
-      const project: Project = { ...input, id: newId("p"), note: "", createdAt: stamp, updatedAt: stamp };
+      const project: Project = { ...input, id: newId("p"), paused: false, note: "", createdAt: stamp, updatedAt: stamp };
       set((s) => ({ projects: [...s.projects, project] }));
       setOpen(new Set(get().open).add(project.id));
       persist(api.saveProject(project), () =>

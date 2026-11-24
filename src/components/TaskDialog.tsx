@@ -2,9 +2,9 @@ import { useRef, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { fmtDay, iso, parseISO } from "../domain/dates";
-import { plural } from "../domain/format";
+import { fmtMinutes, plural } from "../domain/format";
 import { allLoad, infoOf, projectLoad } from "../domain/priority";
-import { LEVEL_LABEL, type Task } from "../domain/types";
+import { DEFAULT_SIZE, LEVEL_LABEL, SIZES, type Size, type Task } from "../domain/types";
 import { useStore } from "../store";
 import { Modal } from "./Modal";
 import { Lozenge } from "./ui";
@@ -28,6 +28,7 @@ export function TaskDialog({ projectId, taskId, date: startDate }: { projectId?:
   const [date, setDate] = useState(editing?.date ?? startDate ?? "");
   const [loadMode, setLoadMode] = useState<LoadMode>(readLoadMode);
   const [time, setTime] = useState(editing?.time ?? "");
+  const [size, setSize] = useState<Size>(editing?.size ?? DEFAULT_SIZE);
   const [pinned, setPinned] = useState(editing?.pinned ?? false);
   const [nameErr, setNameErr] = useState(false);
   const [projectErr, setProjectErr] = useState(false);
@@ -36,7 +37,7 @@ export function TaskDialog({ projectId, taskId, date: startDate }: { projectId?:
 
   const draft: Task = {
     id: "draft", projectId: project, name, date: date || null, time: date && time ? time : null,
-    pinned, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "",
+    size, pinned, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "",
   };
   const x = infoOf(draft, projects, now);
   const others = tasks.filter((t) => t.id !== editing?.id);
@@ -58,7 +59,7 @@ export function TaskDialog({ projectId, taskId, date: startDate }: { projectId?:
   const submit = () => {
     if (!name.trim()) { setNameErr(true); nameRef.current?.focus(); return; }
     if (!project) { setProjectErr(true); projectRef.current?.focus(); return; }
-    const input = { projectId: project, name: name.trim(), date: draft.date, time: draft.time, pinned };
+    const input = { projectId: project, name: name.trim(), date: draft.date, time: draft.time, size, pinned };
     if (editing) updateTask(editing.id, input);
     else addTask(input);
     closeDialogs();
@@ -102,6 +103,18 @@ export function TaskDialog({ projectId, taskId, date: startDate }: { projectId?:
         </select>
         <span className="field-error" id="tProjectErr" hidden={!projectErr}>Choose a project.</span>
       </div>
+      <fieldset className="field">
+        <legend>Size</legend>
+        <div className="chips">
+          {SIZES.map((m) => (
+            <label className="chip-opt" key={m}>
+              <input type="radio" name="tSize" checked={size === m} onChange={() => setSize(m)} />
+              <span>{fmtMinutes(m)}</span>
+            </label>
+          ))}
+        </div>
+        <span className="field-help">How long the task takes. More than 4 hours? Split it into smaller tasks.</span>
+      </fieldset>
       <div className="field">
         <div className="date-head">
           <span className="label" id="tDateLabel">Deadline date{date && <>: <b>{fmtDay(parseISO(date))}</b></>}</span>
@@ -150,7 +163,7 @@ export function TaskDialog({ projectId, taskId, date: startDate }: { projectId?:
       <div className="field">
         <label htmlFor="tTime">Time</label>
         <input className="input" id="tTime" type="time" disabled={!date} value={time} onChange={(e) => setTime(e.target.value)} />
-        <span className="field-help">No date? The task uses the project deadline. No time? It is due at the end of the day.</span>
+        <span className="field-help">No date? The task uses the project deadline, if the project has one. No time? It is due at the end of the day.</span>
       </div>
       {project ? (
         <div className={`preview-priority is-${x.level}`} role="status">

@@ -1,4 +1,4 @@
-import { dueMain, dueSub } from "../domain/format";
+import { dueMain, dueSub, fmtMinutes } from "../domain/format";
 import type { TaskInfo } from "../domain/priority";
 import type { Project } from "../domain/types";
 import { useStore } from "../store";
@@ -32,6 +32,7 @@ export function TaskRow({ x, showLevel = false, project, compact = false }: { x:
       <span className="task-meta">
         {overdue && <Lozenge level="overdue" />}
         {showLevel && <Lozenge level={x.level} />}
+        {!task.done && <span className="size-chip size-chip--row">{fmtMinutes(task.size)}</span>}
         <span className="task-due">
           <b className={overdue ? "is-late" : ""}>{task.done ? "Done" : dueMain(x)}</b>
           <span>{dueSub(x)}</span>

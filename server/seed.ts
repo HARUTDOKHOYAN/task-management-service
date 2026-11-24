@@ -4,7 +4,7 @@
    npm run mock:remove remove only the demo items from your real database */
 import { MongoClient } from "mongodb";
 import { addDays, iso, startOfDay } from "../src/domain/dates";
-import type { FreeTask, Project, Routine, Task } from "../src/domain/types";
+import { DEFAULT_SIZE, type FreeTask, type Importance, type Project, type Routine, type Task } from "../src/domain/types";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB ?? "";
@@ -25,45 +25,53 @@ const stamp = (n: number, hour = 10) => {
 };
 
 const projects: Project[] = [
-  { id: "p-demo-web", name: "Website redesign", color: "#1868DB", deadline: day(4), note: "Reproduce the login bug in Safari, then fix the token check." },
-  { id: "p-demo-app", name: "Mobile app MVP", color: "#964AC0", deadline: day(9), note: "Finish screen 3 of onboarding, the permissions screen." },
-  { id: "p-demo-report", name: "Marketing report", color: "#227D9B", deadline: day(6), note: "" },
-  { id: "p-demo-handbook", name: "Team handbook", color: "#BD5B00", deadline: day(20), note: "" },
-].map((p, i) => ({ ...p, createdAt: stamp(-30 + i), updatedAt: stamp(-1) }));
+  { id: "p-demo-web", name: "Website redesign", color: "#1868DB", deadline: null, importance: 3, note: "Reproduce the login bug in Safari, then fix the token check." },
+  { id: "p-demo-app", name: "Mobile app MVP", color: "#964AC0", deadline: null, importance: 2, note: "Finish screen 3 of onboarding, the permissions screen." },
+  { id: "p-demo-report", name: "Marketing report", color: "#227D9B", deadline: day(20), importance: 2, note: "" },
+  { id: "p-demo-handbook", name: "Team handbook", color: "#BD5B00", deadline: null, importance: 1, note: "" },
+  { id: "p-demo-photos", name: "Photo archive", color: "#6B6E76", deadline: null, importance: 1, paused: true, note: "" },
+].map((p, i) => ({ paused: false, ...p, importance: p.importance as Importance, createdAt: stamp(-30 + i), updatedAt: stamp(-1) }));
 
 type Seed = Pick<Task, "projectId" | "name"> & Partial<Task>;
 const seeds: Seed[] = [
-  // Website redesign: overdue, today, tomorrow (High), plus Medium, Low, done and archived
+  // Website redesign: High importance, two tasks due now, worked on 2 days ago
   { projectId: "p-demo-web", name: "Fix login error", date: day(-1), time: "17:00" },
-  { projectId: "p-demo-web", name: "Send homepage draft to client", date: day(0), time: "14:00" },
-  { projectId: "p-demo-web", name: "Test contact form on mobile", date: day(1), time: "10:00" },
-  { projectId: "p-demo-web", name: "Write About page text", date: day(2) },
-  { projectId: "p-demo-web", name: "Check page speed", date: day(3), time: "11:00" },
-  { projectId: "p-demo-web", name: "Update footer links" },
+  { projectId: "p-demo-web", name: "Send homepage draft to client", date: day(0), time: "14:00", size: 30 },
+  { projectId: "p-demo-web", name: "Check page speed", date: day(4), size: 30 },
+  { projectId: "p-demo-web", name: "Test contact form on mobile" },
+  { projectId: "p-demo-web", name: "Write About page text", size: 120 },
+  { projectId: "p-demo-web", name: "Update footer links", size: 10 },
+  { projectId: "p-demo-web", name: "Move the blog to the new design", size: 240 },
   { projectId: "p-demo-web", name: "Pick new fonts", done: true, doneAt: stamp(-2) },
-  { projectId: "p-demo-web", name: "Collect old page texts", done: true, doneAt: stamp(-1) },
+  { projectId: "p-demo-web", name: "Collect old page texts", done: true, doneAt: stamp(-5), size: 30 },
   { projectId: "p-demo-web", name: "Make site map", done: true, doneAt: stamp(-8), archivedAt: stamp(-6) },
   { projectId: "p-demo-web", name: "Kick-off call with client", done: true, doneAt: stamp(-14), archivedAt: stamp(-12) },
-  // Mobile app MVP
-  { projectId: "p-demo-app", name: "Finish onboarding screens", date: day(0), time: "18:00" },
-  { projectId: "p-demo-app", name: "Write API notes for backend", date: day(1) },
-  { projectId: "p-demo-app", name: "Design settings page", date: day(2) },
-  { projectId: "p-demo-app", name: "Set up push notifications", date: day(7) },
-  { projectId: "p-demo-app", name: "App store screenshots", pinned: true },
-  { projectId: "p-demo-app", name: "Choose app icon", done: true, doneAt: stamp(-3), archivedAt: stamp(-1) },
-  // Marketing report
-  { projectId: "p-demo-report", name: "Collect last month numbers", date: day(1), time: "12:00" },
-  { projectId: "p-demo-report", name: "Make charts for the report", date: day(3) },
+  // Mobile app MVP: Normal importance, a lot of work left, no work for 5 days
+  { projectId: "p-demo-app", name: "Finish onboarding screens", size: 120 },
+  { projectId: "p-demo-app", name: "Write API notes for backend" },
+  { projectId: "p-demo-app", name: "Design settings page", size: 180 },
+  { projectId: "p-demo-app", name: "Set up push notifications", size: 240 },
+  { projectId: "p-demo-app", name: "App store screenshots", size: 120 },
+  { projectId: "p-demo-app", name: "Build the profile screen", size: 240 },
+  { projectId: "p-demo-app", name: "Choose app icon", done: true, doneAt: stamp(-5), archivedAt: stamp(-1) },
+  // Marketing report: worked on yesterday
+  { projectId: "p-demo-report", name: "Make charts for the report", size: 120 },
+  { projectId: "p-demo-report", name: "Collect last month numbers" },
   { projectId: "p-demo-report", name: "Write summary" },
-  { projectId: "p-demo-report", name: "Ask sales for data", done: true, doneAt: stamp(-4) },
-  // Team handbook: nothing urgent
-  { projectId: "p-demo-handbook", name: "Outline the chapters", date: day(12) },
-  { projectId: "p-demo-handbook", name: "Write holiday rules", date: day(16) },
+  { projectId: "p-demo-report", name: "Ask sales for data", done: true, doneAt: stamp(-1) },
+  // Team handbook: Low importance, no work for 12 days
+  { projectId: "p-demo-handbook", name: "Write the onboarding page" },
+  { projectId: "p-demo-handbook", name: "Write holiday rules", size: 180 },
+  { projectId: "p-demo-handbook", name: "Outline the chapters", done: true, doneAt: stamp(-12), archivedAt: stamp(-10) },
+  // Photo archive: paused
+  { projectId: "p-demo-photos", name: "Sort summer photos", size: 240 },
+  { projectId: "p-demo-photos", name: "Delete duplicates", size: 120 },
 ];
 const tasks: Task[] = seeds.map((s, i) => ({
   id: `t-demo-${i + 1}`,
   date: null,
   time: null,
+  size: DEFAULT_SIZE,
   pinned: false,
   done: false,
   doneAt: null,

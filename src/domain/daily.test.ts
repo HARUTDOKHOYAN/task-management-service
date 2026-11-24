@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { dailyGroups, isDoneToday, toggledDoneOn } from "./daily";
 import type { Project, Routine } from "./types";
 
-const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", note: "", createdAt: "", updatedAt: "" };
+const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-12", importance: 2, paused: false, note: "", createdAt: "", updatedAt: "" };
 const Q: Project = { ...P, id: "q", name: "Q" };
 const now = new Date(2026, 9, 8, 15, 0); // Thu 8 Oct 2026, 15:00
 

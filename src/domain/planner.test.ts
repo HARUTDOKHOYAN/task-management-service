@@ -3,11 +3,11 @@ import { iso } from "./dates";
 import { monthDays, monthSummary, openByDay } from "./planner";
 import type { Project, Task } from "./types";
 
-const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-31", note: "", createdAt: "", updatedAt: "" };
+const P: Project = { id: "p", name: "P", color: "#1868DB", deadline: "2026-10-31", importance: 2, paused: false, note: "", createdAt: "", updatedAt: "" };
 const now = new Date(2026, 9, 8, 15, 0); // Thu 8 Oct 2026, 15:00
 
 function task(over: Partial<Task> = {}): Task {
-  return { id: "t", projectId: "p", name: "T", date: null, time: null, pinned: false, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "", ...over };
+  return { id: "t", projectId: "p", name: "T", date: null, time: null, size: 60, pinned: false, done: false, doneAt: null, archivedAt: null, createdAt: "", updatedAt: "", ...over };
 }
 
 describe("planner", () => {

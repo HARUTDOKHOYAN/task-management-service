@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { iso, nextMonday } from "../domain/dates";
 import { deadlineLabel, plural } from "../domain/format";
-import { COLORS } from "../domain/types";
+import { COLORS, DEFAULT_IMPORTANCE, IMPORTANCES, IMPORTANCE_LABEL, type Importance } from "../domain/types";
 import { useStore } from "../store";
 import { Modal } from "./Modal";
 import { CheckIcon, Tile } from "./ui";
@@ -18,21 +17,20 @@ export function ProjectDialog({ projectId }: { projectId?: string }) {
   const [name, setName] = useState(editing?.name ?? "");
   const [colorHex, setColorHex] = useState<string>(editing?.color ?? (startColor ?? COLORS[0]).hex);
   const [colorErr, setColorErr] = useState(false);
-  const [deadline, setDeadline] = useState(editing?.deadline ?? iso(nextMonday(now)));
+  const [deadline, setDeadline] = useState(editing?.deadline ?? "");
+  const [importance, setImportance] = useState<Importance>(editing?.importance ?? DEFAULT_IMPORTANCE);
+  const [paused, setPaused] = useState(editing?.paused ?? false);
   const [nameErr, setNameErr] = useState(false);
-  const [dateErr, setDateErr] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
-  const dateRef = useRef<HTMLInputElement>(null);
   const preset = COLORS.find((c) => c.hex.toLowerCase() === colorHex.toLowerCase());
   const color = { hex: colorHex, label: preset?.label ?? `Custom (${colorHex})` };
   const taskCount = editing ? tasks.filter((t) => t.projectId === editing.id).length : 0;
 
   const submit = () => {
     if (!name.trim()) { setNameErr(true); nameRef.current?.focus(); return; }
-    if (!deadline) { setDateErr(true); dateRef.current?.focus(); return; }
-    const input = { name: name.trim(), color: color.hex, deadline };
+    const input = { name: name.trim(), color: color.hex, deadline: deadline || null, importance };
     if (editing) {
-      updateProject(editing.id, input);
+      updateProject(editing.id, { ...input, paused });
       useStore.getState().showFlag(`Project saved: ${input.name}`);
       closeDialogs();
     } else {
@@ -90,16 +88,31 @@ export function ProjectDialog({ projectId }: { projectId?: string }) {
         <span className="field-error" id="pColorErr" hidden={!colorErr}>Red is not allowed. Choose another color.</span>
         <span className="field-help">Red is not offered, because red means High priority.</span>
       </fieldset>
+      <fieldset className="field">
+        <legend>Importance</legend>
+        <div className="chips">
+          {IMPORTANCES.map((n) => (
+            <label className="chip-opt" key={n}>
+              <input type="radio" name="pImportance" checked={importance === n} onChange={() => setImportance(n)} />
+              <span>{IMPORTANCE_LABEL[n]}</span>
+            </label>
+          ))}
+        </div>
+        <span className="field-help">An important project comes back to the top of the main page faster.</span>
+      </fieldset>
       <div className="field">
-        <label htmlFor="pDate">Project deadline <span className="req">*</span></label>
+        <label htmlFor="pDate">Project deadline</label>
         <input
-          ref={dateRef} className="input" id="pDate" type="date" aria-describedby="pDateHelp pDateErr"
-          aria-invalid={dateErr || undefined} value={deadline}
-          onChange={(e) => { setDeadline(e.target.value); setDateErr(false); }}
+          className="input" id="pDate" type="date" aria-describedby="pDateHelp"
+          value={deadline} onChange={(e) => setDeadline(e.target.value)}
         />
-        <span className="field-help" id="pDateHelp">Tasks without their own date use this deadline.</span>
-        <span className="field-error" id="pDateErr" hidden={!dateErr}>Choose a deadline.</span>
+        <span className="field-help" id="pDateHelp">You can leave this empty. Tasks without their own date use this deadline.</span>
       </div>
+      {editing && (
+        <label className="check-row">
+          <input type="checkbox" checked={paused} onChange={(e) => setPaused(e.target.checked)} /> Pause this project (score 0, not in today's plan)
+        </label>
+      )}
       <div className="field">
         <span className="small muted" style={{ fontWeight: 653 }}>Preview</span>
         <div className="project-preview">
@@ -107,7 +120,7 @@ export function ProjectDialog({ projectId }: { projectId?: string }) {
           <div>
             <b>{name.trim() || "New project"}</b>
             <span className="small muted">
-              Deadline {deadline ? deadlineLabel(deadline, now) : "no deadline yet"}, {plural(taskCount, "task")}. Color: {color.label}
+              {IMPORTANCE_LABEL[importance]} importance. {deadline ? `Deadline ${deadlineLabel(deadline, now)}` : "No deadline"}, {plural(taskCount, "task")}. Color: {color.label}
             </span>
           </div>
         </div>
